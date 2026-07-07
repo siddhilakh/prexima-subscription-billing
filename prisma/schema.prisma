@@ -11,3 +11,59 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  stripeCustomerId String?   @unique
+  createdAt        DateTime  @default(now())
+
+  subscriptions    Subscription[]
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  stripePriceId String   @unique
+  priceInCents  Int
+  interval      String   // "month" or "year"
+  features      Json
+  createdAt     DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  planId               String
+  stripeSubscriptionId String    @unique
+  status               String    // "active" | "pending" | "cancelled" | "expired"
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  plan     Plan      @relation(fields: [planId], references: [id])
+  invoices Invoice[]
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  subscriptionId  String
+  stripeInvoiceId String   @unique
+  amountInCents   Int
+  status          String   // "paid" | "failed" | "pending"
+  pdfUrl          String?
+  createdAt       DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+}
+
+model WebhookEvent {
+  id           String   @id // Stripe's event id, e.g. "evt_..."
+  eventType    String
+  processedAt  DateTime @default(now())
+  payload      Json
+}

@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
+import CancelButton from "@/components/CancelButton";
 
 const prisma = new PrismaClient();
 
@@ -53,9 +54,7 @@ export default async function DashboardPage() {
         <div className="mt-6 flex gap-3">
           <button className="border rounded-md px-4 py-2 text-sm">Upgrade</button>
           <button className="border rounded-md px-4 py-2 text-sm">Downgrade</button>
-          <button className="border rounded-md px-4 py-2 text-sm text-red-500">
-            Cancel subscription
-          </button>
+          <CancelButton disabled={subscription.cancelAtPeriodEnd} />
         </div>
 
         <h2 className="mt-8 mb-3 font-medium">Invoices</h2>

@@ -16,7 +16,7 @@ export default async function PricingPage() {
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {plans.map((plan) => {
-          const features = plan.features as Record<string, any>;
+          const features = plan.features as string[];
           const isPro = plan.name === "Pro";
 
           return (
@@ -32,7 +32,7 @@ export default async function PricingPage() {
                 </span>
               )}
 
-              <h2 className="text-lg font-semibold">{plan.name}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{plan.name}</h2>
               <p className="text-3xl font-bold mt-2">
                 ${(plan.priceInCents / 100).toFixed(0)}
                 <span className="text-base font-normal text-gray-500">
@@ -41,12 +41,13 @@ export default async function PricingPage() {
               </p>
 
               <ul className="mt-4 space-y-2 text-sm text-gray-600">
-                {Object.entries(features).map(([key, value]) => (
-                  <li key={key}>
-                    {key}: {String(value)}
-                  </li>
-                ))}
-              </ul>
+  {features.map((feature) => (
+    <li key={feature} className="flex items-center gap-2">
+      <span className="text-orange-500">✓</span>
+      {feature}
+    </li>
+  ))}
+</ul>
 
               <form action="/api/checkout" method="POST" className="mt-6">
                 <input type="hidden" name="planId" value={plan.id} />

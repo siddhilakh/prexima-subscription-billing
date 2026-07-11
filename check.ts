@@ -3,8 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const plans = await prisma.plan.findMany();
-  plans.forEach((p) => console.log(p.name, "| features:", p.features));
+  await prisma.invoice.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.webhookEvent.deleteMany();
+  console.log("Cleared Invoice, Subscription, and WebhookEvent tables.");
 }
 
 main().finally(() => prisma.$disconnect());

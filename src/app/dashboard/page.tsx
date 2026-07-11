@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import CancelButton from "@/components/CancelButton";
+import PlanChangeButtons from "@/components/PlanChangeButtons";
 
 const prisma = new PrismaClient();
 
@@ -14,6 +15,7 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" },
     include: { plan: true, invoices: { orderBy: { createdAt: "desc" } } },
   });
+  const allPlans = await prisma.plan.findMany();
 
   if (!subscription) {
     return (
@@ -52,8 +54,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button className="border rounded-md px-4 py-2 text-sm">Upgrade</button>
-          <button className="border rounded-md px-4 py-2 text-sm">Downgrade</button>
+          <PlanChangeButtons currentPlanId={subscription.planId} allPlans={allPlans} />
           <CancelButton disabled={subscription.cancelAtPeriodEnd} />
         </div>
 

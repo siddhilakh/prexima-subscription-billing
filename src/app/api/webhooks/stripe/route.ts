@@ -168,21 +168,25 @@ export async function POST(req: NextRequest) {
       }
 
       case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        const periodEnd = sub.items.data[0].current_period_end;
+  const sub = event.data.object as Stripe.Subscription;
+  const periodEnd = sub.items.data[0].current_period_end;
+  const priceId = sub.items.data[0].price.id;
 
-        await prisma.subscription.updateMany({
-          where: { stripeSubscriptionId: sub.id },
-          data: {
-            status: sub.status === "active" ? "active" : sub.status,
-            currentPeriodEnd: new Date(periodEnd * 1000),
-            cancelAtPeriodEnd: sub.cancel_at_period_end,
-          },
-        });
+  const plan = await prisma.plan.findUnique({ where: { stripePriceId: priceId } });
 
-        console.log("Subscription updated:", sub.id);
-        break;
-      }
+  await prisma.subscription.updateMany({
+    where: { stripeSubscriptionId: sub.id },
+    data: {
+      status: sub.status === "active" ? "active" : sub.status,
+      currentPeriodEnd: new Date(periodEnd * 1000),
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      ...(plan ? { planId: plan.id } : {}),
+    },
+  });
+
+  console.log("Subscription updated:", sub.id);
+  break;
+}
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;

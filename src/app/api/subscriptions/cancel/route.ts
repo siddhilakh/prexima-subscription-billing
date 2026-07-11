@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PrismaClient } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
+import { sendCancellationEmail } from "@/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const prisma = new PrismaClient();
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
     where: { id: subscription.id },
     data: { cancelAtPeriodEnd: true, status: "cancelled" },
   });
+
+  await sendCancellationEmail(user.email, subscription.currentPeriodEnd.toDateString());
 
   return NextResponse.json({ success: true });
 }

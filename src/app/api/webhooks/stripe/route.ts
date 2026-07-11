@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PrismaClient, Prisma } from "@prisma/client";
+import {
+  sendSubscriptionConfirmedEmail,
+  sendInvoiceEmail,
+  sendPaymentFailedEmail,
+  sendCancellationEmail,
+} from "@/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const prisma = new PrismaClient();
@@ -72,6 +78,16 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        const activatedPlan = await prisma.plan.findUnique({ where: { id: planId } });
+        const emailUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (emailUser && activatedPlan) {
+          await sendSubscriptionConfirmedEmail(
+            emailUser.email,
+            activatedPlan.name,
+            new Date(currentPeriodEnd * 1000).toDateString()
+          );
+        }
+
         console.log("Subscription activated for user:", userId);
         break;
       }
@@ -135,6 +151,18 @@ export async function POST(req: NextRequest) {
           data: { status: "active" },
         });
 
+        const subForEmail = await prisma.subscription.findUnique({
+          where: { id: subscription.id },
+          include: { user: true },
+        });
+        if (subForEmail) {
+          await sendInvoiceEmail(
+  subForEmail.user.email,
+  `$${(invoice.amount_paid / 100).toFixed(2)}`,
+  invoice.invoice_pdf ?? null
+);
+        }
+
         console.log("Invoice recorded for subscription:", subscription.id);
         break;
       }
@@ -162,6 +190,17 @@ export async function POST(req: NextRequest) {
               status: "failed",
             },
           });
+         const failedSub = await prisma.subscription.findUnique({
+            where: { id: subscription.id },
+            include: { user: true },
+          });
+          if (failedSub) {
+            await sendPaymentFailedEmail(
+              failedSub.user.email,
+              `${process.env.NEXT_PUBLIC_APP_URL}/pricing`
+            );
+          }
+
           console.log("Invoice payment failed for subscription:", subscription.id);
         }
         break;
